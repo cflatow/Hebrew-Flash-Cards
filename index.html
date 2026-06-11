@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hebrew Aleph-Bet Flashcards</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;500;700;900&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #faf8f4;
+    --surface: #ffffff;
+    --surface-2: #f1ede5;
+    --text: #1f1c17;
+    --text-muted: #7a7468;
+    --accent: #2563eb;
+    --accent-soft: #dbe7fe;
+    --green: #16a34a;
+    --green-soft: #dcfce7;
+    --red: #dc2626;
+    --red-soft: #fee2e2;
+    --border: #e5e0d5;
+    --shadow: 0 4px 16px rgba(40, 35, 25, 0.08);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14120e;
+      --surface: #201d18;
+      --surface-2: #2a261f;
+      --text: #f0ece3;
+      --text-muted: #9a9388;
+      --accent: #60a5fa;
+      --accent-soft: #1e3a5f;
+      --green: #4ade80;
+      --green-soft: #14331f;
+      --red: #f87171;
+      --red-soft: #3d1716;
+      --border: #36312a;
+      --shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+    }
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "DM Sans", system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 24px 16px 48px;
+  }
+  .hebrew, h1 { font-family: "Frank Ruhl Libre", serif; }
+  .hebrew { direction: rtl; unicode-bidi: isolate; }
+
+  header { text-align: center; margin-bottom: 20px; }
+  h1 { font-size: 1.75rem; font-weight: 900; letter-spacing: 0.01em; }
+  h1 .hebrew { color: var(--accent); }
+  header p { color: var(--text-muted); font-size: 0.9rem; margin-top: 4px; }
+
+  .app { width: 100%; max-width: 480px; display: flex; flex-direction: column; gap: 16px; }
+
+  /* --- controls --- */
+  .seg {
+    display: flex;
+    background: var(--surface-2);
+    border-radius: 12px;
+    padding: 4px;
+    gap: 4px;
+    flex-wrap: wrap;
+  }
+  .seg button {
+    flex: 1 1 auto;
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    font: inherit;
+    font-size: 0.85rem;
+    font-weight: 500;
+    padding: 8px 10px;
+    border-radius: 9px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.15s, color 0.15s;
+  }
+  .seg button.active {
+    background: var(--surface);
+    color: var(--text);
+    box-shadow: var(--shadow);
+    font-weight: 700;
+  }
+  .row { display: flex; gap: 8px; align-items: center; }
+  .row .seg { flex: 1; }
+  #shuffleBtn {
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text-muted);
+    font: inherit;
+    font-size: 0.85rem;
+    font-weight: 500;
+    padding: 10px 14px;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #shuffleBtn.active {
+    background: var(--accent-soft);
+    border-color: var(--accent);
+    color: var(--accent);
+    font-weight: 700;
+  }
+
+  /* --- progress --- */
+  .progress-wrap { display: flex; flex-direction: column; gap: 6px; }
+  .progress-meta {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+  }
+  .score-pills { display: flex; gap: 6px; }
+  .pill { padding: 1px 8px; border-radius: 99px; font-weight: 700; }
+  .pill.good { background: var(--green-soft); color: var(--green); }
+  .pill.bad { background: var(--red-soft); color: var(--red); }
+  .progress-bar {
+    height: 6px;
+    background: var(--surface-2);
+    border-radius: 99px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    width: 0%;
+    background: var(--accent);
+    border-radius: 99px;
+    transition: width 0.3s ease;
+  }
+
+  /* --- card --- */
+  .card-scene { perspective: 1200px; height: 340px; }
+  .card {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    cursor: pointer;
+    transform-style: preserve-3d;
+    transition: transform 0.55s cubic-bezier(0.4, 0.1, 0.2, 1);
+  }
+  .card.flipped { transform: rotateY(180deg); }
+  .card-face {
+    position: absolute;
+    inset: 0;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    box-shadow: var(--shadow);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 24px;
+    text-align: center;
+    overflow: hidden;
+  }
+  .card-back { transform: rotateY(180deg); }
+  .glyph {
+    font-family: "Frank Ruhl Libre", serif;
+    direction: rtl;
+    font-size: 7.5rem;
+    line-height: 1.15;
+    font-weight: 500;
+  }
+  .glyph.pair { font-size: 5.5rem; letter-spacing: 0.08em; }
+  .glyph.small { font-size: 4.5rem; }
+  .front-prompt {
+    font-size: 1.6rem;
+    font-weight: 700;
+    font-family: "Frank Ruhl Libre", serif;
+  }
+  .hint {
+    position: absolute;
+    bottom: 14px;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  .card-name {
+    font-family: "Frank Ruhl Libre", serif;
+    font-size: 1.9rem;
+    font-weight: 700;
+  }
+  .card-detail { color: var(--text-muted); font-size: 1rem; line-height: 1.5; }
+  .card-detail b { color: var(--text); }
+  .badge {
+    margin-top: 8px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    background: var(--accent-soft);
+    color: var(--accent);
+    padding: 4px 10px;
+    border-radius: 99px;
+  }
+  .deck-tag {
+    position: absolute;
+    top: 14px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  /* --- answer buttons --- */
+  .answers { display: flex; gap: 12px; min-height: 52px; }
+  .answers button {
+    flex: 1;
+    border: none;
+    border-radius: 14px;
+    font: inherit;
+    font-size: 1rem;
+    font-weight: 700;
+    padding: 14px;
+    cursor: pointer;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(6px);
+    transition: opacity 0.25s, transform 0.25s;
+  }
+  .answers.visible button {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0);
+  }
+  #wrongBtn { background: var(--red-soft); color: var(--red); }
+  #rightBtn { background: var(--green-soft); color: var(--green); }
+  .answers button:active { transform: scale(0.97); }
+
+  /* --- complete screen --- */
+  .complete {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    box-shadow: var(--shadow);
+    padding: 40px 24px;
+    text-align: center;
+  }
+  .complete.visible { display: flex; }
+  .complete .big-score {
+    font-size: 3.5rem;
+    font-weight: 900;
+    font-family: "Frank Ruhl Libre", serif;
+    color: var(--accent);
+  }
+  .complete h2 { font-family: "Frank Ruhl Libre", serif; font-size: 1.5rem; }
+  .complete p { color: var(--text-muted); }
+  .complete .actions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-top: 6px; }
+  .complete button {
+    border: none;
+    border-radius: 12px;
+    font: inherit;
+    font-weight: 700;
+    padding: 12px 20px;
+    cursor: pointer;
+  }
+  #restartBtn { background: var(--accent); color: #fff; }
+  #retryWrongBtn { background: var(--red-soft); color: var(--red); }
+
+  .hidden { display: none !important; }
+
+  @media (max-width: 420px) {
+    .card-scene { height: 300px; }
+    .glyph { font-size: 6rem; }
+    .glyph.pair { font-size: 4.5rem; }
+    .glyph.small { font-size: 3.8rem; }
+    h1 { font-size: 1.4rem; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1><span class="hebrew">אָלֶף־בֵּית</span> Flashcards</h1>
+  <p>Learn the Hebrew alphabet, final forms, and vowels</p>
+</header>
+
+<div class="app">
+
+  <div class="seg" id="deckSeg" role="tablist" aria-label="Deck">
+    <button data-deck="letters" class="active">Letters</button>
+    <button data-deck="finals">Final forms</button>
+    <button data-deck="vowels">Vowels</button>
+    <button data-deck="all">Everything</button>
+  </div>
+
+  <div class="row">
+    <div class="seg" id="modeSeg" role="tablist" aria-label="Study mode">
+      <button data-mode="l2n" class="active">Letter → Name</button>
+      <button data-mode="n2l">Name → Letter</button>
+    </div>
+    <button id="shuffleBtn" aria-pressed="false" title="Shuffle card order">⤮ Shuffle</button>
+  </div>
+
+  <div class="progress-wrap" id="progressWrap">
+    <div class="progress-meta">
+      <span id="counter">Card 1 of 22</span>
+      <span class="score-pills">
+        <span class="pill good" id="rightCount">✓ 0</span>
+        <span class="pill bad" id="wrongCount">✗ 0</span>
+      </span>
+    </div>
+    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+  </div>
+
+  <div class="card-scene" id="cardScene">
+    <div class="card" id="card" tabindex="0" role="button" aria-label="Flashcard — click or press Enter to flip">
+      <div class="card-face card-front" id="cardFront"></div>
+      <div class="card-face card-back" id="cardBack"></div>
+    </div>
+  </div>
+
+  <div class="answers" id="answers">
+    <button id="wrongBtn">✗ Got it wrong</button>
+    <button id="rightBtn">✓ Got it right</button>
+  </div>
+
+  <div class="complete" id="complete">
+    <h2>Session complete!</h2>
+    <div class="big-score" id="finalScore">100%</div>
+    <p id="finalDetail">You got 22 of 22 cards right.</p>
+    <div class="actions">
+      <button id="retryWrongBtn">Retry wrong cards</button>
+      <button id="restartBtn">Start over</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  // ---------- Data ----------
+  var LETTERS = [
+    { ch: "א", name: "Alef",   sound: "Silent (glottal stop)", value: 1,   final: null },
+    { ch: "ב", name: "Bet",    sound: "B as in boy / V as in vine", value: 2, final: null },
+    { ch: "ג", name: "Gimel",  sound: "G as in girl", value: 3,  final: null },
+    { ch: "ד", name: "Dalet",  sound: "D as in door", value: 4,  final: null },
+    { ch: "ה", name: "He",     sound: "H as in hay", value: 5,   final: null },
+    { ch: "ו", name: "Vav",    sound: "V as in vine (also O/U as a vowel)", value: 6, final: null },
+    { ch: "ז", name: "Zayin",  sound: "Z as in zebra", value: 7, final: null },
+    { ch: "ח", name: "Chet",   sound: "CH as in Bach (guttural)", value: 8, final: null },
+    { ch: "ט", name: "Tet",    sound: "T as in tall", value: 9,  final: null },
+    { ch: "י", name: "Yod",    sound: "Y as in yes", value: 10,  final: null },
+    { ch: "כ", name: "Kaf",    sound: "K as in kite / KH as in Bach", value: 20, final: "ך" },
+    { ch: "ל", name: "Lamed",  sound: "L as in lamp", value: 30, final: null },
+    { ch: "מ", name: "Mem",    sound: "M as in moon", value: 40, final: "ם" },
+    { ch: "נ", name: "Nun",    sound: "N as in nut", value: 50,  final: "ן" },
+    { ch: "ס", name: "Samekh", sound: "S as in sun", value: 60,  final: null },
+    { ch: "ע", name: "Ayin",   sound: "Silent (guttural)", value: 70, final: null },
+    { ch: "פ", name: "Pe",     sound: "P as in pen / F as in fun", value: 80, final: "ף" },
+    { ch: "צ", name: "Tsadi",  sound: "TS as in nuts", value: 90, final: "ץ" },
+    { ch: "ק", name: "Qof",    sound: "K as in kite", value: 100, final: null },
+    { ch: "ר", name: "Resh",   sound: "R as in run (often guttural)", value: 200, final: null },
+    { ch: "ש", name: "Shin",   sound: "SH as in shy / S as in sun (Sin)", value: 300, final: null },
+    { ch: "ת", name: "Tav",    sound: "T as in tall", value: 400, final: null }
+  ];
+
+  var FINALS = [
+    { reg: "כ", fin: "ך", name: "Final Kaf (Khaf Sofit)",   sound: "KH as in Bach", value: 20, finalValue: 500 },
+    { reg: "מ", fin: "ם", name: "Final Mem (Mem Sofit)",    sound: "M as in moon",  value: 40, finalValue: 600 },
+    { reg: "נ", fin: "ן", name: "Final Nun (Nun Sofit)",    sound: "N as in nut",   value: 50, finalValue: 700 },
+    { reg: "פ", fin: "ף", name: "Final Pe (Fe Sofit)",      sound: "F as in fun",   value: 80, finalValue: 800 },
+    { reg: "צ", fin: "ץ", name: "Final Tsadi (Tsadi Sofit)",sound: "TS as in nuts", value: 90, finalValue: 900 }
+  ];
+
+  var VOWELS = [
+    { ch: "בָ",  name: "Kamatz",        sound: "AH", example: "father" },
+    { ch: "בַ",  name: "Patach",        sound: "AH", example: "father" },
+    { ch: "בֵ",  name: "Tzere",         sound: "EI", example: "they" },
+    { ch: "בֶ",  name: "Segol",         sound: "EH", example: "bed" },
+    { ch: "בְ",  name: "Sheva",         sound: "Quick UH (or silent)", example: "about" },
+    { ch: "בִ",  name: "Chirik",        sound: "EE", example: "see" },
+    { ch: "בֹ",  name: "Cholam",        sound: "OH", example: "go" },
+    { ch: "בוֹ", name: "Cholam Malei",  sound: "OH", example: "go" },
+    { ch: "בֻ",  name: "Kubutz",        sound: "OO", example: "moon" },
+    { ch: "בוּ", name: "Shuruk",        sound: "OO", example: "moon" },
+    { ch: "בֲ",  name: "Chataf Patach", sound: "Quick AH", example: "alike" },
+    { ch: "בֱ",  name: "Chataf Segol",  sound: "Quick EH", example: "elect" },
+    { ch: "בֳ",  name: "Chataf Kamatz", sound: "Quick OH", example: "obey" }
+  ];
+
+  // ---------- Build card objects ----------
+  function letterCard(l) {
+    return {
+      type: "letter",
+      deckLabel: "Letter",
+      front: l.ch,
+      name: l.name,
+      back:
+        '<div class="card-name">' + l.name + "</div>" +
+        '<div class="glyph small hebrew">' + l.ch + "</div>" +
+        '<div class="card-detail">Sound: <b>' + l.sound + "</b><br>Gematria value: <b>" + l.value + "</b></div>" +
+        (l.final ? '<div class="badge">Has final form: <span class="hebrew">' + l.final + "</span></div>" : "")
+    };
+  }
+  function finalCard(f) {
+    return {
+      type: "final",
+      deckLabel: "Final form",
+      front: f.reg + " " + f.fin,
+      frontPair: true,
+      name: f.name,
+      back:
+        '<div class="card-name">' + f.name + "</div>" +
+        '<div class="glyph small hebrew">' + f.reg + " " + f.fin + "</div>" +
+        '<div class="card-detail">Used at the <b>end of a word</b><br>Sound: <b>' + f.sound + "</b><br>Gematria value: <b>" + f.value + "</b> (final form: <b>" + f.finalValue + "</b>)</div>"
+    };
+  }
+  function vowelCard(v) {
+    return {
+      type: "vowel",
+      deckLabel: "Vowel (nikud)",
+      front: v.ch,
+      name: v.name,
+      back:
+        '<div class="card-name">' + v.name + "</div>" +
+        '<div class="glyph small hebrew">' + v.ch + "</div>" +
+        '<div class="card-detail">Sound: <b>' + v.sound + '</b><br>As in: <b>"' + v.example + '"</b></div>'
+    };
+  }
+
+  var DECKS = {
+    letters: LETTERS.map(letterCard),
+    finals: FINALS.map(finalCard),
+    vowels: VOWELS.map(vowelCard)
+  };
+  DECKS.all = DECKS.letters.concat(DECKS.finals, DECKS.vowels);
+
+  // ---------- State ----------
+  var state = {
+    deck: "letters",
+    mode: "l2n",
+    shuffle: false,
+    cards: [],
+    index: 0,
+    right: 0,
+    wrong: 0,
+    wrongCards: [],
+    flipped: false,
+    answered: false
+  };
+
+  // ---------- Elements ----------
+  var $ = function (id) { return document.getElementById(id); };
+  var cardEl = $("card"), frontEl = $("cardFront"), backEl = $("cardBack");
+  var answersEl = $("answers"), completeEl = $("complete");
+  var counterEl = $("counter"), fillEl = $("progressFill");
+  var rightCountEl = $("rightCount"), wrongCountEl = $("wrongCount");
+  var sceneEl = $("cardScene"), progressWrap = $("progressWrap");
+
+  function shuffleArr(arr) {
+    var a = arr.slice();
+    for (var i = a.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var t = a[i]; a[i] = a[j]; a[j] = t;
+    }
+    return a;
+  }
+
+  function startSession(cards) {
+    state.cards = state.shuffle ? shuffleArr(cards) : cards.slice();
+    state.index = 0;
+    state.right = 0;
+    state.wrong = 0;
+    state.wrongCards = [];
+    completeEl.classList.remove("visible");
+    sceneEl.classList.remove("hidden");
+    answersEl.classList.remove("hidden");
+    progressWrap.classList.remove("hidden");
+    renderCard();
+    updateProgress();
+  }
+
+  function restart() { startSession(DECKS[state.deck]); }
+
+  function renderCard() {
+    var c = state.cards[state.index];
+    state.flipped = false;
+    state.answered = false;
+    cardEl.classList.remove("flipped");
+    answersEl.classList.remove("visible");
+
+    var glyphClass = "glyph hebrew" + (c.frontPair ? " pair" : "");
+    var letterSide =
+      '<span class="deck-tag">' + c.deckLabel + "</span>" +
+      '<div class="' + glyphClass + '">' + c.front + "</div>" +
+      '<span class="hint">Click to flip</span>';
+    var nameSide =
+      '<span class="deck-tag">' + c.deckLabel + "</span>" +
+      '<div class="front-prompt">' + c.name + "</div>" +
+      '<span class="hint">Click to flip</span>';
+
+    // In Name → Letter mode the prompt is the name; the back always shows full details.
+    frontEl.innerHTML = state.mode === "n2l" ? nameSide : letterSide;
+    backEl.innerHTML = c.back;
+  }
+
+  function updateProgress() {
+    var total = state.cards.length;
+    var done = state.index;
+    counterEl.textContent = "Card " + Math.min(done + 1, total) + " of " + total;
+    fillEl.style.width = (total ? (done / total) * 100 : 0) + "%";
+    rightCountEl.textContent = "✓ " + state.right;
+    wrongCountEl.textContent = "✗ " + state.wrong;
+  }
+
+  function flip() {
+    if (state.answered) return;
+    state.flipped = !state.flipped;
+    cardEl.classList.toggle("flipped", state.flipped);
+    answersEl.classList.toggle("visible", state.flipped);
+  }
+
+  function answer(correct) {
+    if (!state.flipped || state.answered) return;
+    state.answered = true;
+    if (correct) {
+      state.right++;
+    } else {
+      state.wrong++;
+      state.wrongCards.push(state.cards[state.index]);
+    }
+    state.index++;
+    updateProgress();
+    if (state.index >= state.cards.length) {
+      setTimeout(showComplete, 350);
+    } else {
+      // Flip back before showing the next card so the answer isn't spoiled mid-transition.
+      cardEl.classList.remove("flipped");
+      answersEl.classList.remove("visible");
+      setTimeout(renderCard, 300);
+    }
+  }
+
+  function showComplete() {
+    var total = state.right + state.wrong;
+    var pct = total ? Math.round((state.right / total) * 100) : 0;
+    fillEl.style.width = "100%";
+    $("finalScore").textContent = pct + "%";
+    $("finalDetail").textContent = "You got " + state.right + " of " + total + " cards right." +
+      (pct === 100 ? " כל הכבוד! (Well done!)" : "");
+    $("retryWrongBtn").classList.toggle("hidden", state.wrongCards.length === 0);
+    sceneEl.classList.add("hidden");
+    answersEl.classList.add("hidden");
+    completeEl.classList.add("visible");
+  }
+
+  // ---------- Events ----------
+  cardEl.addEventListener("click", flip);
+  cardEl.addEventListener("keydown", function (e) {
+    if (e.key === "Enter" || e.key === " ") { e.preventDefault(); flip(); }
+  });
+  $("rightBtn").addEventListener("click", function () { answer(true); });
+  $("wrongBtn").addEventListener("click", function () { answer(false); });
+  $("restartBtn").addEventListener("click", restart);
+  $("retryWrongBtn").addEventListener("click", function () {
+    startSession(state.wrongCards);
+  });
+
+  $("deckSeg").addEventListener("click", function (e) {
+    var btn = e.target.closest("button");
+    if (!btn) return;
+    this.querySelectorAll("button").forEach(function (b) { b.classList.remove("active"); });
+    btn.classList.add("active");
+    state.deck = btn.dataset.deck;
+    restart();
+  });
+
+  $("modeSeg").addEventListener("click", function (e) {
+    var btn = e.target.closest("button");
+    if (!btn) return;
+    this.querySelectorAll("button").forEach(function (b) { b.classList.remove("active"); });
+    btn.classList.add("active");
+    state.mode = btn.dataset.mode;
+    restart();
+  });
+
+  $("shuffleBtn").addEventListener("click", function () {
+    state.shuffle = !state.shuffle;
+    this.classList.toggle("active", state.shuffle);
+    this.setAttribute("aria-pressed", String(state.shuffle));
+    restart();
+  });
+
+  document.addEventListener("keydown", function (e) {
+    if (completeEl.classList.contains("visible")) return;
+    if (e.key === "ArrowRight" || e.key === "1") answer(true);
+    if (e.key === "ArrowLeft" || e.key === "0") answer(false);
+  });
+
+  // ---------- Go ----------
+  restart();
+})();
+</script>
+</body>
+</html>
